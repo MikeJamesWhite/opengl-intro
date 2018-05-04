@@ -211,6 +211,21 @@ void OpenGLWindow::render()
     SDL_GL_SwapWindow(sdlWin);
 }
 
+void OpenGLWindow::changeAxis() {
+    if (transformationAxis == X) {
+        transformationAxis = Y;
+        cout << "Axis: Y" << endl;
+    }
+    else if (transformationAxis == Y) {
+        transformationAxis = Z;
+        cout << "Axis: Z" << endl;
+    }
+    else if (transformationAxis == Z) {
+        transformationAxis = X;
+        cout << "Axis: X" << endl;
+    }
+}
+
 // The program will exit if this function returns false
 bool OpenGLWindow::handleEvent(SDL_Event e)
 {
@@ -224,39 +239,145 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             return false;
         }
 
+        if(e.key.keysym.sym == SDLK_a) // scale all
+        {
+            transformationMode = SCALEALL;
+            cout << "Scaling object uniformly." << endl;
+        }
+
         if(e.key.keysym.sym == SDLK_s) // scale
         {
-            cout << "Scaling object." << endl;
-            glm::mat4 trans;
-            trans = glm::scale(trans, glm::vec3(0.9, 0.9, 0.9));
-            Model *= trans;
-            MVP = Projection * View * Model;
+            if (transformationMode == SCALE) {
+                changeAxis();
+            }
+            else {
+                cout << "Scaling object on individual axis." << endl;
+                transformationMode = SCALE;
+                transformationAxis = X;
+            }   
+
             return true;
         }
 
-        if(e.key.keysym.sym == SDLK_t) // transform
+        if(e.key.keysym.sym == SDLK_t) // translate
         {
-            cout << "Translating object." << endl;
-            glm::mat4 trans;
-            trans = glm::translate(trans, glm::vec3(0.1, 0.1, 0.1));
-            Model *= trans;
-            MVP = Projection * View * Model;            
+            if (transformationMode == TRANSLATE) {
+                changeAxis();
+            }
+            else {
+                cout << "Translating object." << endl;
+                transformationMode = TRANSLATE;
+                transformationAxis = X;
+            }            
             return true;
         }
         
         if(e.key.keysym.sym == SDLK_r) // rotate
         {
-            cout << "Rotating object." << endl;
-            glm::mat4 trans;
-            trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
-            Model *= trans;
+            if (transformationMode == ROTATE) {
+                changeAxis();
+            }
+            else {
+                cout << "Rotating object." << endl;
+                transformationMode = ROTATE;
+                transformationAxis = X;
+            }        
+            return true;
+        }
+
+        if(e.key.keysym.sym == SDLK_v)
+        {
+            if (transformationMode != VIEW) {
+                cout << "Viewing object." << endl;
+                transformationMode = VIEW;
+            }               
+        }
+
+    }
+    else if (e.type == SDL_MOUSEMOTION) {
+        // figure out if movement is up or down, and change sign accordingly
+        int sign = 0;
+        if (e.motion.yrel < 0)
+            sign = 1;
+        else
+            sign = -1;
+        if (transformationMode == ROTATE) {
+            if (transformationAxis == X) {
+                glm::mat4 trans;
+                trans = glm::rotate(trans, glm::radians(sign * 5.0f), glm::vec3(1.0, 0.0, 0.0));
+                Model *= trans;
+            }
+            else if (transformationAxis == Y) {
+                glm::mat4 trans;
+                trans = glm::rotate(trans, glm::radians(sign * 5.0f), glm::vec3(0.0, 1.0, 0.0));
+                Model *= trans;                
+            }
+            else if (transformationAxis == Z) {
+                glm::mat4 trans;
+                trans = glm::rotate(trans, glm::radians(sign * 5.0f), glm::vec3(0.0, 0.0, 1.0));
+                Model *= trans;                
+            }
             MVP = Projection * View * Model;            
             return true;
         }
 
+        else if (transformationMode == SCALE) {
+            if (transformationAxis == X) {
+                glm::mat4 trans;
+                trans = glm::scale(trans, glm::vec3(1.0 + (sign * 0.1), 1.0, 1.0));
+                Model *= trans;
+            }
+            else if (transformationAxis == Y) {
+                glm::mat4 trans;
+                trans = glm::scale(trans, glm::vec3(1.0, 1.0 + (sign * 0.1), 1.0));
+                Model *= trans;                
+            }
+            else if (transformationAxis == Z) {
+                glm::mat4 trans;
+                trans = glm::scale(trans, glm::vec3(1.0, 1.0, 1.0 + (sign * 0.1)));
+                Model *= trans;                
+            }
+            MVP = Projection * View * Model;            
+            return true;
+        } 
+
+        else if (transformationMode == SCALEALL) {
+            glm::mat4 trans;
+            trans = glm::scale(trans, glm::vec3(1.0 + (sign * 0.1), 1.0 + (sign * 0.1), 1.0 + (sign * 0.1)));
+            Model *= trans;   
+            MVP = Projection * View * Model;            
+            return true;
+        } 
+
+        else if (transformationMode == TRANSLATE) {
+            if (transformationAxis == X) {
+                glm::mat4 trans;
+                trans = glm::translate(trans, glm::vec3(sign * 0.1, 0.0, 0.0));
+                Model *= trans;
+            }
+            else if (transformationAxis == Y) {
+                glm::mat4 trans;
+                trans = glm::translate(trans, glm::vec3(0.0, sign * 0.1, 0.0));
+                Model *= trans;                
+            }
+            else if (transformationAxis == Z) {
+                glm::mat4 trans;
+                trans = glm::translate(trans, glm::vec3(0.0, 0.0, sign * 0.1));
+                Model *= trans;                
+            }
+            MVP = Projection * View * Model;            
+            return true;
+        } 
+
+        else if (transformationMode == VIEW) { // do nothing
+            return true;
+        } 
     }
+
     return true;
 }
+
+
 
 void OpenGLWindow::cleanup()
 {

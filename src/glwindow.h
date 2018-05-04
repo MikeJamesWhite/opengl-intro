@@ -25,6 +25,14 @@ public:
     void loadModel(std::string filename);
 
 private:
+    enum Axis {X, Y, Z};
+    enum Transformation {VIEW, SCALEALL, SCALE, ROTATE, TRANSLATE};
+
+    void changeAxis();
+
+    Transformation transformationMode = VIEW;
+    Axis transformationAxis = X;
+
     SDL_Window* sdlWin;
 
     GLuint vao;
