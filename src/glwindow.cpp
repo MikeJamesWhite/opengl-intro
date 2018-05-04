@@ -179,7 +179,7 @@ void OpenGLWindow::initGL()
 
     // Load the model that we want to use and buffer the vertex attributes
     GeometryData geometry;
-    geometry.loadFromOBJFile("objects/doggo.obj");
+    geometry.loadFromOBJFile("objects/bunny.obj");
     vertexCount = geometry.vertexCount();
     cout << vertexCount << endl;
 
@@ -195,6 +195,22 @@ void OpenGLWindow::initGL()
     glPrintError("Setup complete", true);
 }
 
+void OpenGLWindow::spawnNewObject() {
+    GeometryData geometry;
+    geometry.loadFromOBJFile("objects/teapot.obj");
+
+    vertexCount2 = geometry.vertexCount();
+    cout << vertexCount2 << endl;
+
+    glGenBuffers(2, &vertexBuffer2);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer2);
+
+    int vertexLoc = glGetAttribLocation(shader, "position");
+    glBufferData(GL_ARRAY_BUFFER, vertexCount2 * 3 * sizeof(float), geometry.vertexData(), GL_STATIC_DRAW);
+    glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, false, 0, 0);
+    glEnableVertexAttribArray(vertexLoc);
+}
+
 void OpenGLWindow::render()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -206,7 +222,14 @@ void OpenGLWindow::render()
     // send transformation to shader
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
-    glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glDrawArrays(GL_TRIANGLES, 0, vertexCount); // draw first object
+
+    if (spawnedSecondObj) {
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer2);
+        glDrawArrays(GL_TRIANGLES, 0, vertexCount2); // draw second object
+    }
 
     // Swap the front and back buffers on the window, effectively putting what we just "drew"
     // onto the screen (whereas previously it only existed in memory)
@@ -287,14 +310,14 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             return true;
         }
 
-        if(e.key.keysym.sym == SDLK_v)
+        if(e.key.keysym.sym == SDLK_v) // view
         {
             if (transformationMode != VIEW) {
                 cout << "Viewing object." << endl;
                 transformationMode = VIEW;
             }               
         }
-        if(e.key.keysym.sym == SDLK_p)
+        if(e.key.keysym.sym == SDLK_p) // party mode (color change)
         {
             if (!partyMode) {
                 cout << "Party mode enabled! :D" << endl;
@@ -306,6 +329,13 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
                 glUniform3f(colorLoc, 1.0f, 1.0f, 1.0f);                
             }      
         }
+        if(e.key.keysym.sym == SDLK_n) // load second object
+        {
+            if (!spawnedSecondObj) {
+                spawnNewObject();  
+                cout << "Spawning second object!" << endl;
+            }
+        }
     }
     else if (e.type == SDL_MOUSEMOTION) {
         // figure out if movement is up or down, and change sign accordingly
@@ -315,21 +345,21 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
         else
             sign = -1;
         if (transformationMode == ROTATE) {
+            glm::mat4 trans;
+            trans = glm::translate(trans, translation);
+
             if (transformationAxis == X) {
-                glm::mat4 trans;
                 trans = glm::rotate(trans, glm::radians(sign * 5.0f), glm::vec3(1.0, 0.0, 0.0));
-                Model *= trans;
             }
             else if (transformationAxis == Y) {
-                glm::mat4 trans;
                 trans = glm::rotate(trans, glm::radians(sign * 5.0f), glm::vec3(0.0, 1.0, 0.0));
-                Model *= trans;                
             }
             else if (transformationAxis == Z) {
-                glm::mat4 trans;
-                trans = glm::rotate(trans, glm::radians(sign * 5.0f), glm::vec3(0.0, 0.0, 1.0));
-                Model *= trans;                
+                trans = glm::rotate(trans, glm::radians(sign * 5.0f), glm::vec3(0.0, 0.0, 1.0));             
             }
+
+            trans = glm::translate(trans, -translation);
+            Model *= trans;
             MVP = Projection * View * Model;            
             return true;
         }
@@ -366,18 +396,22 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             if (transformationAxis == X) {
                 glm::mat4 trans;
                 trans = glm::translate(trans, glm::vec3(sign * 0.1, 0.0, 0.0));
+                translation.x += sign * 0.1;
                 Model *= trans;
             }
             else if (transformationAxis == Y) {
                 glm::mat4 trans;
                 trans = glm::translate(trans, glm::vec3(0.0, sign * 0.1, 0.0));
+                translation.y += sign * 0.1;
                 Model *= trans;                
             }
             else if (transformationAxis == Z) {
                 glm::mat4 trans;
                 trans = glm::translate(trans, glm::vec3(0.0, 0.0, sign * 0.1));
+                translation.z += sign * 0.1;
                 Model *= trans;                
             }
+            cout << "Oject translation: (" << translation.x << ", " << translation.y << ", " << translation.z << ")" << endl;
             MVP = Projection * View * Model;            
             return true;
         } 
