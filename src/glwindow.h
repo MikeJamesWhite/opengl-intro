@@ -40,6 +40,9 @@ private:
     GLuint vertexBuffer;
     GLuint vertexCount;
     GLuint MatrixID;
+    int colorLoc;
+
+    bool partyMode = false;
 
 	glm::mat4 Model;
 	glm::mat4 View;

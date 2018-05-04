@@ -174,12 +174,12 @@ void OpenGLWindow::initGL()
     // Our ModelViewProjection : multiplication of our 3 matrices
     MVP        = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
-    int colorLoc = glGetUniformLocation(shader, "objectColor");
-    glUniform3f(colorLoc, 1.0f, 1.0f, 1.0f);
+    colorLoc = glGetUniformLocation(shader, "objectColor");
+    glUniform3f(colorLoc, 1.0f, 1.0f, 1.0f);                
 
     // Load the model that we want to use and buffer the vertex attributes
     GeometryData geometry;
-    geometry.loadFromOBJFile("objects/teapot.obj");
+    geometry.loadFromOBJFile("objects/doggo.obj");
     vertexCount = geometry.vertexCount();
     cout << vertexCount << endl;
 
@@ -198,8 +198,10 @@ void OpenGLWindow::initGL()
 void OpenGLWindow::render()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
     glUseProgram(shader);
+
+    if (partyMode)
+        glUniform3f(colorLoc, (float) rand()/RAND_MAX, (float) rand()/RAND_MAX, (float) rand()/RAND_MAX);
 
     // send transformation to shader
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -292,7 +294,18 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
                 transformationMode = VIEW;
             }               
         }
-
+        if(e.key.keysym.sym == SDLK_p)
+        {
+            if (!partyMode) {
+                cout << "Party mode enabled! :D" << endl;
+                partyMode = true;   
+            }
+            else {
+                cout << "Party mode disabled... :(" << endl;
+                partyMode = false;
+                glUniform3f(colorLoc, 1.0f, 1.0f, 1.0f);                
+            }      
+        }
     }
     else if (e.type == SDL_MOUSEMOTION) {
         // figure out if movement is up or down, and change sign accordingly
