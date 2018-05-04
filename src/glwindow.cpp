@@ -72,8 +72,7 @@ GLuint loadShader(const char* shaderFilename, GLenum shaderType)
     return shader;
 }
 
-GLuint loadShaderProgram(const char* vertShaderFilename,
-                       const char* fragShaderFilename)
+GLuint loadShaderProgram(const char* vertShaderFilename, const char* fragShaderFilename)
 {
     GLuint vertShader = loadShader(vertShaderFilename, GL_VERTEX_SHADER);
     GLuint fragShader = loadShader(fragShaderFilename, GL_FRAGMENT_SHADER);
@@ -147,7 +146,7 @@ void OpenGLWindow::initGL()
     glCullFace(GL_BACK);
 
     // Dark blue background
-    glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+    glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
@@ -155,7 +154,7 @@ void OpenGLWindow::initGL()
     // Note that this path is relative to your working directory
     // when running the program (IE if you run from within build
     // then you need to place these files in build as well)
-    shader = loadShaderProgram("simple.vert", "simple.frag");
+    shader = loadShaderProgram("build/simple.vert", "build/simple.frag");
     glUseProgram(shader);
 
     // Get a handle for our "MVP" uniform
@@ -166,21 +165,21 @@ void OpenGLWindow::initGL()
 
     // Camera matrix
     View       = glm::lookAt(
-                                glm::vec3(0,0,-7), // Camera is at (4,3,3), in World Space
-                                glm::vec3(0,0,0), // and looks at the origin
-                                glm::vec3(0,1,0)  // Head is up (set to 0,-1,0 to look upside-down)
-                           );
+                    glm::vec3(0,0,-5), // Camera is at (4,3,3), in World Space
+                    glm::vec3(0,0,0), // and looks at the origin
+                    glm::vec3(0,1,0)  // Head is up (set to 0,-1,0 to look upside-down)
+                );
     // Model matrix : an identity matrix (model will be at the origin)
     Model      = glm::mat4(1.0f);
     // Our ModelViewProjection : multiplication of our 3 matrices
     MVP        = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
     int colorLoc = glGetUniformLocation(shader, "objectColor");
-    glUniform3f(colorLoc, 1.0f, 0.0f, 0.0f);
+    glUniform3f(colorLoc, 1.0f, 1.0f, 1.0f);
 
     // Load the model that we want to use and buffer the vertex attributes
     GeometryData geometry;
-    geometry.loadFromOBJFile("../objects/bunny.obj");
+    geometry.loadFromOBJFile("objects/teapot.obj");
     vertexCount = geometry.vertexCount();
     cout << vertexCount << endl;
 
@@ -192,6 +191,7 @@ void OpenGLWindow::initGL()
     glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, false, 0, 0);
     glEnableVertexAttribArray(vertexLoc);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
     glPrintError("Setup complete", true);
 }
 
@@ -223,24 +223,27 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
         {
             return false;
         }
+
         if(e.key.keysym.sym == SDLK_s) // scale
         {
             cout << "Scaling object." << endl;
             glm::mat4 trans;
-            trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5)); 
+            trans = glm::scale(trans, glm::vec3(0.9, 0.9, 0.9));
             Model *= trans;
             MVP = Projection * View * Model;
             return true;
         }
+
         if(e.key.keysym.sym == SDLK_t) // transform
         {
             cout << "Translating object." << endl;
             glm::mat4 trans;
-            trans = glm::translate(trans, glm::vec3(0.5, 0.5, 0.5)); 
+            trans = glm::translate(trans, glm::vec3(0.1, 0.1, 0.1));
             Model *= trans;
             MVP = Projection * View * Model;            
             return true;
         }
+        
         if(e.key.keysym.sym == SDLK_r) // rotate
         {
             cout << "Rotating object." << endl;

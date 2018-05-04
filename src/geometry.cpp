@@ -163,10 +163,7 @@ void GeometryData::loadFromOBJFile(string filename)
                         inStream.unget(); // This is just to prevent us from consuming a newline
                     }
                 }
-                else
-                {
-                    inStream.unget(); // This is just to prevent us from consuming a newline
-                }                
+                
                 // NOTE: We subtract 1 here because the OBJ format uses 1-based indices
                 face.vertexIndex[index] = vertIndex - 1;
                 face.texCoordIndex[index] = texCoordIndex - 1;

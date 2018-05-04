@@ -22,6 +22,8 @@ public:
     bool handleEvent(SDL_Event e);
     void cleanup();
 
+    void loadModel(std::string filename);
+
 private:
     SDL_Window* sdlWin;
 

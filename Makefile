@@ -12,8 +12,8 @@ TARGETPATH=$(BUILDDIR)/$(TARGET)
 
 build: $(OBJ) $(TARGET)
 
-run:
-	cd $(BUILDDIR); ./$(TARGET)
+run: $(TARGET)
+	$(BUILDDIR)/$(TARGET)
 
 $(TARGET): $(OBJ)
 	$(CXX) $(OBJ) -o $(TARGETPATH) $(LFLAGS)
