@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <stdio.h>
 
 #include "SDL.h"
@@ -178,10 +179,12 @@ void OpenGLWindow::initGL()
     glUniform3f(colorLoc, 1.0f, 1.0f, 1.0f);                
 
     // Load the model that we want to use and buffer the vertex attributes
+    cout << "Enter the model path to import: ";
+    cin >> filename1;
+    
     GeometryData geometry;
-    geometry.loadFromOBJFile("objects/bunny.obj");
+    geometry.loadFromOBJFile(filename1);
     vertexCount = geometry.vertexCount();
-    cout << vertexCount << endl;
 
     int vertexLoc = glGetAttribLocation(shader, "position");
 
@@ -192,23 +195,75 @@ void OpenGLWindow::initGL()
     glEnableVertexAttribArray(vertexLoc);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    glPrintError("Setup complete", true);
+    glPrintError("Setup complete!", true);
 }
 
 void OpenGLWindow::spawnNewObject() {
-    GeometryData geometry;
-    geometry.loadFromOBJFile("objects/teapot.obj");
+    GeometryData geometry, geometry2;
 
-    vertexCount2 = geometry.vertexCount();
-    cout << vertexCount2 << endl;
+    cout << "Enter the model path to import: ";
+    cin >> filename2;
 
-    glGenBuffers(2, &vertexBuffer2);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer2);
+    // load models
+    geometry.loadFromOBJFile(filename1);
+    vertexCount = geometry.vertexCount();
 
+    geometry2.loadFromOBJFile(filename2);
+    vertexCount2 = geometry2.vertexCount();
+
+    cout << "Total vertex count: " << geometry.vertexCount() + geometry2.vertexCount() << endl;
+
+    float * firstModel = ( (float*) geometry.vertexData() );
+    float * secondModel = ( (float*) geometry2.vertexData() );
+
+    // calculate maximum x coordinate of first model
+    float firstBound = 0;
+
+    for (int vertex = 0; vertex < vertexCount * 3; vertex += 3) {
+        if (firstModel[vertex] > firstBound) {
+            firstBound = firstModel[vertex];
+        }
+    }  
+
+    // calculate minimum x coordinate of second model
+    float secondBound = FLT_MAX;
+
+    for (int vertex = 0; vertex < vertexCount2 * 3; vertex += 3) {
+        if (secondModel[vertex] < secondBound) {
+            secondBound = secondModel[vertex];
+        }
+    }
+
+    // calculate shift value
+    float shift = std::abs(secondBound - firstBound) + 0.05f;
+    cout << "Shift value: " << shift << endl;
+
+    // offset the second model's vertices using bounding value
+    for (int vertex = 0; vertex < vertexCount2 * 3; vertex += 3) {
+        secondModel[vertex] += shift;
+    }
+
+    // combine vertex arrays
+    vector<float> combinedVertices;
+    for (int i = 0; i < vertexCount * 3; i++ ) {
+        combinedVertices.push_back( firstModel[i] );
+    }
+    for (int i = 0; i < vertexCount2 * 3; i++ ) {
+        combinedVertices.push_back( secondModel[i] );
+    }
+    cout << "combined vertices into one vector" << endl;
+
+    // buffer vertices
     int vertexLoc = glGetAttribLocation(shader, "position");
-    glBufferData(GL_ARRAY_BUFFER, vertexCount2 * 3 * sizeof(float), geometry.vertexData(), GL_STATIC_DRAW);
+
+    glGenBuffers(1, &vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, (vertexCount + vertexCount2) * 3 * sizeof(float), &combinedVertices[0], GL_STATIC_DRAW);
     glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, false, 0, 0);
     glEnableVertexAttribArray(vertexLoc);
+
+    spawnedSecondObj = true;
+    glPrintError("Second model loading complete!", true);
 }
 
 void OpenGLWindow::render()
@@ -222,13 +277,10 @@ void OpenGLWindow::render()
     // send transformation to shader
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glDrawArrays(GL_TRIANGLES, 0, vertexCount); // draw first object
 
     if (spawnedSecondObj) {
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer2);
-        glDrawArrays(GL_TRIANGLES, 0, vertexCount2); // draw second object
+        glDrawArrays(GL_TRIANGLES, vertexCount + 1, vertexCount2); // draw second object
     }
 
     // Swap the front and back buffers on the window, effectively putting what we just "drew"

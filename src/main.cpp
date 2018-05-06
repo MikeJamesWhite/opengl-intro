@@ -40,7 +40,7 @@ int SDL_main(int argc, char** argv)
         window.render();
 
         // We sleep for 10ms here so as to prevent excessive CPU usage
-        SDL_Delay(1);
+        SDL_Delay(10);
     }
 
     window.cleanup();
