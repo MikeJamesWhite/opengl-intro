@@ -277,17 +277,18 @@ void OpenGLWindow::render()
     // send transformation to shader
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
-    glDrawArrays(GL_TRIANGLES, 0, vertexCount); // draw first object
+    glDrawArrays(GL_TRIANGLES, 0, vertexCount + vertexCount2); // draw first object
 
-    if (spawnedSecondObj) {
-        glDrawArrays(GL_TRIANGLES, vertexCount + 1, vertexCount2); // draw second object
-    }
+    //if (spawnedSecondObj) {
+    //    glDrawArrays(GL_TRIANGLES, vertexCount + 1, vertexCount2); // draw second object
+    //}
 
     // Swap the front and back buffers on the window, effectively putting what we just "drew"
     // onto the screen (whereas previously it only existed in memory)
     SDL_GL_SwapWindow(sdlWin);
 }
 
+// switches between transform axis
 void OpenGLWindow::changeAxis() {
     if (transformationAxis == X) {
         transformationAxis = Y;
@@ -303,12 +304,9 @@ void OpenGLWindow::changeAxis() {
     }
 }
 
-// The program will exit if this function returns false
+// event handler for SDL key presses and mouse motion
 bool OpenGLWindow::handleEvent(SDL_Event e)
 {
-    // A list of keycode constants is available here: https://wiki.libsdl.org/SDL_Keycode
-    // Note that SDL provides both Scancodes (which correspond to physical positions on the keyboard)
-    // and Keycodes (which correspond to symbols on the keyboard, and might differ across layouts)
     if(e.type == SDL_KEYDOWN)
     {
         if(e.key.keysym.sym == SDLK_ESCAPE)
@@ -316,13 +314,13 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             return false;
         }
 
-        if(e.key.keysym.sym == SDLK_a) // scale all
+        if(e.key.keysym.sym == SDLK_a) // 'A' = scale all
         {
             transformationMode = SCALEALL;
             cout << "Scaling object uniformly." << endl;
         }
 
-        if(e.key.keysym.sym == SDLK_s) // scale
+        if(e.key.keysym.sym == SDLK_s) // 'S' = scale
         {
             if (transformationMode == SCALE) {
                 changeAxis();
@@ -336,7 +334,7 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             return true;
         }
 
-        if(e.key.keysym.sym == SDLK_t) // translate
+        if(e.key.keysym.sym == SDLK_t) // 'T' = translate
         {
             if (transformationMode == TRANSLATE) {
                 changeAxis();
@@ -349,7 +347,7 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             return true;
         }
         
-        if(e.key.keysym.sym == SDLK_r) // rotate
+        if(e.key.keysym.sym == SDLK_r) // 'R' = rotate
         {
             if (transformationMode == ROTATE) {
                 changeAxis();
@@ -362,14 +360,14 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             return true;
         }
 
-        if(e.key.keysym.sym == SDLK_v) // view
+        if(e.key.keysym.sym == SDLK_v) // 'V' = view
         {
             if (transformationMode != VIEW) {
                 cout << "Viewing object." << endl;
                 transformationMode = VIEW;
             }               
         }
-        if(e.key.keysym.sym == SDLK_p) // party mode (color change)
+        if(e.key.keysym.sym == SDLK_p) // 'P' = party mode (color change)
         {
             if (!partyMode) {
                 cout << "Party mode enabled! :D" << endl;
@@ -381,21 +379,25 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
                 glUniform3f(colorLoc, 1.0f, 1.0f, 1.0f);                
             }      
         }
-        if(e.key.keysym.sym == SDLK_n) // load second object
+        if(e.key.keysym.sym == SDLK_n) // 'N' = load second object
         {
             if (!spawnedSecondObj) {
                 spawnNewObject();  
                 cout << "Spawning second object!" << endl;
             }
+            else cout << "Already have two models in the scene, sorry!" << endl;
         }
     }
-    else if (e.type == SDL_MOUSEMOTION) {
+
+    else if (e.type == SDL_MOUSEMOTION) { // handle mouse motion to drive transformations
+
         // figure out if movement is up or down, and change sign accordingly
         int sign = 0;
         if (e.motion.yrel < 0)
             sign = 1;
         else
             sign = -1;
+
         if (transformationMode == ROTATE) {
             glm::mat4 trans;
             trans = glm::translate(trans, translation);
@@ -472,11 +474,8 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             return true;
         } 
     }
-
     return true;
 }
-
-
 
 void OpenGLWindow::cleanup()
 {
