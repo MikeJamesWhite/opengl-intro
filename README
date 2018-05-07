@@ -10,13 +10,13 @@ CONTROLS:
 
 Transformations:
 
-  'A' - Scale on all axis
+  'A' - Scale on all axis.
 
-  'S' - Scale on an individual axis (tap S again to toggle between these axis)
+  'S' - Scale on an individual axis (tap S again to toggle between these axis).
 
-  'T' - Translate on an individual axis (tap T again to toggle between these axis)
+  'T' - Translate on an individual axis (tap T again to toggle between these axis).
 
-  'R' - Rotate on an individual axis (tap R again to toggle between these axis)
+  'R' - Rotate on an individual axis (tap R again to toggle between these axis).
 
   The mouse is used to drive all transformations by capturing the y axis movement.
 
@@ -24,4 +24,4 @@ Other:
 
   'P' - Party Mode! (Colour changing functionality - toggleable)
 
-  'N' - Load in a second file (Specify the path in the terminal)
+  'N' - Load in a second file (Specify the path in the terminal).

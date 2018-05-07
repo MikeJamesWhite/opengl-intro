@@ -103,7 +103,6 @@ OpenGLWindow::OpenGLWindow()
 {
 }
 
-
 void OpenGLWindow::initGL()
 {
     // We need to first specify what type of OpenGL context we need before we can create the window
@@ -146,15 +145,14 @@ void OpenGLWindow::initGL()
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    // Dark blue background
+    // Dark grey background
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 
+    // generate and bind VAO
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    // Note that this path is relative to your working directory
-    // when running the program (IE if you run from within build
-    // then you need to place these files in build as well)
+    // load and use shader
     shader = loadShaderProgram("build/simple.vert", "build/simple.frag");
     glUseProgram(shader);
 
@@ -166,15 +164,18 @@ void OpenGLWindow::initGL()
 
     // Camera matrix
     View       = glm::lookAt(
-                    glm::vec3(0,0,-5), // Camera is at (4,3,3), in World Space
-                    glm::vec3(0,0,0), // and looks at the origin
-                    glm::vec3(0,1,0)  // Head is up (set to 0,-1,0 to look upside-down)
+                    glm::vec3(0,0,-5), // Camera is at (0, 0, 5), in World Space
+                    glm::vec3(0,0, 0), // and looks at the origin
+                    glm::vec3(0,1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
                 );
+
     // Model matrix : an identity matrix (model will be at the origin)
     Model      = glm::mat4(1.0f);
-    // Our ModelViewProjection : multiplication of our 3 matrices
-    MVP        = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
+    // Our ModelViewProjection : multiplication of our 3 matrices
+    MVP        = Projection * View * Model;
+
+    // set object color to white
     colorLoc = glGetUniformLocation(shader, "objectColor");
     glUniform3f(colorLoc, 1.0f, 1.0f, 1.0f);                
 
@@ -198,7 +199,7 @@ void OpenGLWindow::initGL()
     glPrintError("Setup complete!", true);
 }
 
-void OpenGLWindow::spawnNewObject() {
+void OpenGLWindow::spawnNewObject() { // loads a second model
     GeometryData geometry, geometry2;
 
     cout << "Enter the model path to import: ";
@@ -235,7 +236,7 @@ void OpenGLWindow::spawnNewObject() {
     }
 
     // calculate shift value
-    float shift = std::abs(secondBound - firstBound) + 0.05f;
+    float shift = std::abs(secondBound - firstBound) + 0.3f;
     cout << "Shift value: " << shift << endl;
 
     // offset the second model's vertices using bounding value
@@ -266,8 +267,7 @@ void OpenGLWindow::spawnNewObject() {
     glPrintError("Second model loading complete!", true);
 }
 
-void OpenGLWindow::render()
-{
+void OpenGLWindow::render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(shader);
 
@@ -277,19 +277,14 @@ void OpenGLWindow::render()
     // send transformation to shader
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
-    glDrawArrays(GL_TRIANGLES, 0, vertexCount + vertexCount2); // draw first object
+    // draw objects
+    glDrawArrays(GL_TRIANGLES, 0, vertexCount + vertexCount2);
 
-    //if (spawnedSecondObj) {
-    //    glDrawArrays(GL_TRIANGLES, vertexCount + 1, vertexCount2); // draw second object
-    //}
-
-    // Swap the front and back buffers on the window, effectively putting what we just "drew"
-    // onto the screen (whereas previously it only existed in memory)
+    // Swap the front and back buffers
     SDL_GL_SwapWindow(sdlWin);
 }
 
-// switches between transform axis
-void OpenGLWindow::changeAxis() {
+void OpenGLWindow::changeAxis() { // switches between transform axis
     if (transformationAxis == X) {
         transformationAxis = Y;
         cout << "Axis: Y" << endl;
@@ -304,12 +299,11 @@ void OpenGLWindow::changeAxis() {
     }
 }
 
-// event handler for SDL key presses and mouse motion
-bool OpenGLWindow::handleEvent(SDL_Event e)
-{
+bool OpenGLWindow::handleEvent(SDL_Event e) { // event handler for SDL key presses and mouse motion
+
     if(e.type == SDL_KEYDOWN)
     {
-        if(e.key.keysym.sym == SDLK_ESCAPE)
+        if(e.key.keysym.sym == SDLK_ESCAPE) // 'Esc' = exit
         {
             return false;
         }
@@ -327,6 +321,7 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             }
             else {
                 cout << "Scaling object on individual axis." << endl;
+                cout << "Axis: X" << endl;
                 transformationMode = SCALE;
                 transformationAxis = X;
             }   
@@ -341,9 +336,10 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             }
             else {
                 cout << "Translating object." << endl;
+                cout << "Axis: X" << endl;
                 transformationMode = TRANSLATE;
                 transformationAxis = X;
-            }            
+            }      
             return true;
         }
         
@@ -354,6 +350,7 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             }
             else {
                 cout << "Rotating object." << endl;
+                cout << "Axis: X" << endl;
                 transformationMode = ROTATE;
                 transformationAxis = X;
             }        
@@ -388,7 +385,7 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             else cout << "Already have two models in the scene, sorry!" << endl;
         }
     }
-
+    
     else if (e.type == SDL_MOUSEMOTION) { // handle mouse motion to drive transformations
 
         // figure out if movement is up or down, and change sign accordingly
@@ -398,7 +395,8 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
         else
             sign = -1;
 
-        if (transformationMode == ROTATE) {
+
+        if (transformationMode == ROTATE) { // apply rotation
             glm::mat4 trans;
             trans = glm::translate(trans, translation);
 
@@ -418,7 +416,7 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             return true;
         }
 
-        else if (transformationMode == SCALE) {
+        else if (transformationMode == SCALE) { //apply scale
             if (transformationAxis == X) {
                 glm::mat4 trans;
                 trans = glm::scale(trans, glm::vec3(1.0 + (sign * 0.1), 1.0, 1.0));
@@ -438,7 +436,7 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             return true;
         } 
 
-        else if (transformationMode == SCALEALL) {
+        else if (transformationMode == SCALEALL) { // apply uniform scale
             glm::mat4 trans;
             trans = glm::scale(trans, glm::vec3(1.0 + (sign * 0.1), 1.0 + (sign * 0.1), 1.0 + (sign * 0.1)));
             Model *= trans;   
@@ -446,7 +444,7 @@ bool OpenGLWindow::handleEvent(SDL_Event e)
             return true;
         } 
 
-        else if (transformationMode == TRANSLATE) {
+        else if (transformationMode == TRANSLATE) { // apply translation
             if (transformationAxis == X) {
                 glm::mat4 trans;
                 trans = glm::translate(trans, glm::vec3(sign * 0.1, 0.0, 0.0));
